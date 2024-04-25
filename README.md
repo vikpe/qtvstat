@@ -7,3 +7,7 @@
 ```shell
 cargo add qtvstat
 ```
+
+## See also
+
+* [masterstat](https://github.com/vikpe/masterstat-rust) - Get server addresses from master servers.
