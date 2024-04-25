@@ -87,3 +87,24 @@ pub fn filename_to_url(address: &str, filename: &str) -> String {
 fn demo_filenames_url(address: &str) -> String {
     format!("http://{}/demo_filenames", address)
 }
+
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+
+    #[test]
+    fn test_filename_to_url() {
+        assert_eq!(
+            filename_to_url("example.com", "foo.mvd"),
+            "http://example.com/dl/demos/foo.mvd"
+        );
+    }
+
+    #[test]
+    fn test_demo_filenames_url() {
+        assert_eq!(demo_filenames_url("example.com"), "http://example.com/demo_filenames");
+    }
+}
