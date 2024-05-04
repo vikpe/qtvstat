@@ -1,12 +1,13 @@
+//! HTTP related operations
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::anyhow as e;
+use anyhow::{anyhow as e, Result};
 use dashmap::DashMap;
 
 /// Get demo filenames from a single server
-pub async fn demo_filenames(address: &str, timeout: Duration) -> anyhow::Result<Vec<String>> {
+pub async fn demo_filenames(address: &str, timeout: Duration) -> Result<Vec<String>> {
     let now = std::time::Instant::now();
     let client = reqwest::Client::new();
     let url = demo_filenames_url(address);
@@ -37,7 +38,7 @@ pub async fn demo_filenames(address: &str, timeout: Duration) -> anyhow::Result<
 }
 
 /// Get demo URLs from a single server
-pub async fn demo_urls(address: &str, timeout: Duration) -> anyhow::Result<Vec<String>> {
+pub async fn demo_urls(address: &str, timeout: Duration) -> Result<Vec<String>> {
     let urls: Vec<String> = demo_filenames(address, timeout)
         .await?
         .iter()
@@ -51,9 +52,9 @@ pub async fn demo_urls(address: &str, timeout: Duration) -> anyhow::Result<Vec<S
 pub async fn demo_filenames_per_address(
     addresses: &[String],
     timeout: Duration,
-) -> HashMap<String, anyhow::Result<Vec<String>>> {
+) -> HashMap<String, Result<Vec<String>>> {
     let mut task_handles = vec![];
-    let result_arc: Arc<DashMap<String, anyhow::Result<Vec<String>>>> = Default::default();
+    let result_arc: Arc<DashMap<String, Result<Vec<String>>>> = Default::default();
 
     for address in addresses {
         let result_arc = Arc::clone(&result_arc);
@@ -70,7 +71,7 @@ pub async fn demo_filenames_per_address(
     futures::future::join_all(task_handles).await;
 
     // convert DashMap to HashMap
-    let mut result: HashMap<String, anyhow::Result<Vec<String>>> = HashMap::new();
+    let mut result: HashMap<String, Result<Vec<String>>> = HashMap::new();
 
     for (k, v) in Arc::into_inner(result_arc).unwrap().into_iter() {
         result.insert(k, v);
@@ -88,23 +89,28 @@ fn demo_filenames_url(address: &str) -> String {
     format!("http://{}/demo_filenames", address)
 }
 
-
 #[cfg(test)]
 mod tests {
+    use anyhow::Result;
     use pretty_assertions::assert_eq;
 
     use super::*;
 
     #[test]
-    fn test_filename_to_url() {
+    fn test_filename_to_url() -> Result<()> {
         assert_eq!(
-            filename_to_url("example.com", "foo.mvd"),
-            "http://example.com/dl/demos/foo.mvd"
+            filename_to_url("quake.se:28000", "foo.mvd"),
+            "http://quake.se:28000/dl/demos/foo.mvd"
         );
+
+        Ok(())
     }
 
     #[test]
     fn test_demo_filenames_url() {
-        assert_eq!(demo_filenames_url("example.com"), "http://example.com/demo_filenames");
+        assert_eq!(
+            demo_filenames_url("quake.se:28000"),
+            "http://quake.se:28000/demo_filenames"
+        );
     }
 }
